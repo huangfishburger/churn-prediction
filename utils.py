@@ -1,3 +1,7 @@
+"""
+This script contains functions for 01_data_cleaning.py
+"""
+
 import pandas as pd
 import numpy as np
 import re
@@ -90,51 +94,51 @@ GAME_NAMES = {
 
 
 def to_eng_column_names(data, mapping=ENG_COLUMN_NAMES):
-    '''
-    轉換英文欄位名稱。
-    '''
+    """
+    Convert column names to English
+    """
     new_data = data.rename(columns=mapping)
     return new_data
 
 def remove_na_row(data):
-    '''
-    移除包含 NA 值的資料。
-    '''
+    """
+    Remove NA
+    """
     new_data = data.dropna()
     return new_data
 
 def remove_excluded_id(data, exclusion=EXCLUSION_ID):
-    '''
-    將列於排除名單的 ID 資料移除。
-    '''
+    """
+    Remove exclusive id
+    """
     new_data = data.drop(data[data['id'].isin(exclusion)].index)
     return new_data
 
 def remove_basic_plans(data, pattern=BASIC_PLAN_PATTERNS):
-    '''
-    移除基本免費方案之資料，該方案不在分析範圍內。
-    '''
+    """
+    Remove data for basic free plans, as they are outside the scope of analysis
+    """
     new_data = data[~data['plan'].astype(str).str.contains(pattern, case=False)]
     return new_data
 
 def remove_daily_plans(data, pattern=DAILY_PLAN_PATTERNS):
-    '''
-    移除日訂方案之資料，該方案不在分析範圍內。
-    '''
+    """
+    Remove data for daily subscription plans, as they are outside the scope of analysis
+    """
     new_data = data[~data['plan'].astype(str).str.contains(pattern, case=False)]
     return new_data
 
 def remove_test_plans(data, pattern=TEST_PLAN_PATTERNS):
-    '''
-    移除內部測試方案，該方案不在分析範圍內。
-    '''
+    """
+    Remove internal testing plans, as they are outside the scope of analysis
+    """
     new_data = data[~data['plan'].astype(str).str.contains(pattern, case=False)]
     return new_data
 
 def remove_remark_plans(plan, payment, pattern=REMARK_PATTERNS):
-    '''
-    移除特定優惠碼類別註記之資料，該註記不在分析範圍內。
-    '''
+    """
+    Remove data flagged with specific promo code categories, as these are excluded from analysis
+    """
     new_plan, new_payment = plan.copy(), payment.copy()
     new_payment = new_payment.merge(
         new_plan[['id', 'start_date', 'remark']],
@@ -147,16 +151,16 @@ def remove_remark_plans(plan, payment, pattern=REMARK_PATTERNS):
     return new_plan, new_payment
 
 def remove_non_cgp(data):
-    '''
-    移除非 CGP 通路之資料，其他通路不在分析範圍內。
-    '''
+    """
+    Remove data from non-CGP channels, as other channels are outside the scope of analysis
+    """
     new_data = data[data['channel'] == 'CGP']
     return new_data
 
 def clean_game_names(data, suffixes=GAME_SUFFIXES_PATTERNS, mapping=GAME_NAMES):
-    '''
-    處理遊戲名稱。包含透過 mapping 參數中的參照表進行遊戲名稱對照、以及將特定遊戲的後綴去除，保持一致性。
-    '''
+    """
+    Mapping game names (using a reference table) and removing specific suffixes from game titles to maintain consistency.
+    """
     new_data = data.copy()
     new_data['game'] = new_data['game'].fillna('').astype(str)
     new_data['game'] = new_data['game'].str.replace(suffixes.pattern, '', regex=True)
@@ -165,18 +169,18 @@ def clean_game_names(data, suffixes=GAME_SUFFIXES_PATTERNS, mapping=GAME_NAMES):
     return new_data
 
 def remove_extreme_values(data, column, n=2):
-    '''
-    移除極端值資料。主要用於移除極端 ping 值資料，預設移除正負 2 個標準差
-    '''
+    """
+    Remove extreme outlier data
+    """
     lower = data[column].mean() - n * data[column].std()
     upper = data[column].mean() + n * data[column].std()
     new_data = data[(data[column] > lower) & (data[column] < upper)]
     return new_data
 
 def convert_datetime(data):
-    '''
-    轉換時間欄位格式。
-    '''
+    """
+    Convert time column formats
+    """
     new_data = data.copy()
     for column in new_data.columns:
         if 'date' in column.lower():
@@ -187,38 +191,34 @@ def convert_datetime(data):
     return new_data
 
 def remove_opposite_datetime(data):
-    '''
-    極少部分資料有「方案終止日」早於「方案起始日」之狀況且原因不明，將相關資料移除，避免異常數據導致異常分析結果。
-    '''
+    """
+    Prevent abnormal data from leading to skewed analysis results
+    """
     data = data[~(data['start_date'] > data['end_date'])]
     return data
 
 def convert_gender(data):
-    '''
-    性別二元轉換。
-    1 = 男性
-    0 = 女性
-    '''
+    """
+    Perform binary conversion of gender labels
+    """
     new_data = data.copy()
     if 'gender' in new_data.columns:
         new_data['gender'] = new_data['gender'].map({'男': 1, '女': 0})
     return new_data
 
 def convert_twm_number(data):
-    '''
-    「是否為台灣大哥大門號」二元轉換。
-    1 = 是台哥大門號用戶
-    0 = 非台哥大門號用戶
-    '''
+    """
+    Perform binary conversion of the 'Is a Taiwan Mobile Number' status
+    """
     new_data = data.copy()
     if 'twm_number' in new_data.columns:
         new_data['twm_number'] = new_data['twm_number'].map({'N': 0, 'Y': 1})
     return new_data
 
 def convert_connect(data):
-    '''
-    將連線方式彙整並進行轉換。共分為 WiFi、Mobile (行動網路)、Ethernet (乙太網路)、其他 (無法辨識等)。
-    '''
+    """
+    Convert connection types
+    """
     new_data = data.copy()
     if 'connect' in new_data.columns:
         def converter(label):
@@ -234,9 +234,9 @@ def convert_connect(data):
     return new_data
 
 def convert_platform(data):
-    '''
-    將遊玩平台彙整並進行轉換。共分為 Web、macOS、Windows、Linux、iOS、iPad、Android。
-    '''
+    """
+    Convert playing platforms
+    """
     new_data = data.copy()
     if 'platform' in new_data.columns:
         def converter(label):
@@ -260,11 +260,9 @@ def convert_platform(data):
     return new_data
 
 def mark_promo(data):
-    '''
-    標記是否使用優惠碼。
-    1 = 是
-    0 = 否
-    '''
+    """
+    Mark whether a promo code was used
+    """
     if 'remark' in data.columns:
         new_data = data.copy()
         new_data['promo'] = 0
@@ -272,18 +270,16 @@ def mark_promo(data):
     return new_data
 
 def mark_high_ping(data):
-    '''
-    標記 ping 值是否高於 250
-    1 = 是
-    0 = 否
-    '''
+    """
+    Mark if the ping value is greater than 250
+    """
     if 'ping' in data.columns:
         data['high_ping'] = (data['ping'] > 250).astype(int)
     return data
 
 def remove_brackets(data, column):
     '''
-    去除小括號與其內的數字。主要用於會員基本資料的「目前方案名稱」以及方案資料的「方案名稱」。
+    Remove parentheses and the numbers contained within them
     '''
     new_data = data.copy()
     new_data[column] = data[column].str.replace(r'\s*\([^()]*\)\s*', '', regex=True)
